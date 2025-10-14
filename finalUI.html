@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP Request Intake Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .autocomplete-suggestions {
+            max-height: 200px;
+            overflow-y: auto;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+        .autocomplete-item:hover {
+            background-color: #e2e8f0;
+            cursor: pointer;
+        }
+        .tab-button.active {
+            border-bottom: 3px solid #4f46e5;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin-slow 2s linear infinite;
+        }
+        .status-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .status-Submitted { background-color: #fef3c7; color: #b45309; }
+        .status-In_Progress { background-color: #dbeafe; color: #1e40af; }
+        .status-Completed { background-color: #d1fae5; color: #065f46; }
+        .status-Rejected { background-color: #fee2e2; color: #991b1b; }
+        .status-On_Hold { background-color: #f3e8ff; color: #5b21b6; }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        @media (max-width: 768px) {
+            .responsive-table tr {
+                display: flex;
+                flex-direction: column;
+                border-bottom: 1px solid #e5e7eb;
+                padding: 10px 0;
+            }
+            .responsive-table thead {
+                display: none;
+            }
+            .responsive-table td {
+                display: block;
+                width: 100%;
+                padding: 4px 16px;
+                text-align: left;
+            }
+            .responsive-table td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                margin-right: 8px;
+                color: #4b5563;
+                width: 120px;
+                display: inline-block;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="app-container" class="max-w-6xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+
+        <header class="p-6 bg-indigo-700 text-white">
+            <h1 class="text-3xl font-bold">New SOP Request</h1>
+            <p class="text-indigo-200 mt-1">Submit your Standard Operating Procedure details and requirements.</p>
+        </header>
+
+        <div class="flex border-b border-gray-200 bg-gray-50">
+            <button id="tab-request" class="tab-button active px-6 py-3 text-gray-600 hover:bg-gray-100 transition duration-150" onclick="switchView('request-details')">
+                Request Details (Form)
+            </button>
+            <button id="tab-submission" class="tab-button px-6 py-3 text-gray-600 hover:bg-gray-100 transition duration-150" onclick="switchView('submission-details')">
+                Submission Status & History (<span id="total-entries-count">0</span>)
+            </button>
+        </div>
+
+        <div class="p-6 md:p-8">
+            
+            <div id="request-details-view" class="view-content space-y-8">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-3 mb-4">Request Details</h2>
+                
+                <form id="sopForm" class="space-y-6">
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                        <h3 class="text-lg font-medium text-gray-700 mb-4">User Information</h3>
+                        
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <input type="email" id="email" name="email" required autocomplete="off"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                                    placeholder="e.g., john.doe@example.com">
+                                <div id="email-suggestions" class="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg autocomplete-suggestions hidden">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="name" name="name" 
+                                class="mt-1 block w-full rounded-md p-3 border-gray-300 bg-gray-200 shadow-sm border">
+                        </div>
+
+                        <div>
+                            <label for="manager" class="block text-sm font-medium text-gray-700">Manager</label>
+                            <input type="text" id="manager" name="manager"
+                                class="mt-1 block w-full rounded-md p-3 border-gray-300 bg-gray-200 shadow-sm border">
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold text-gray-800 pt-4 border-t mt-8">SOP & Access Requirements</h3>
+
+                    <div>
+                        <label for="shortDescription" class="block text-sm font-medium text-gray-700">Short Description on SOP <span class="text-red-500">*</span></label>
+                        <input type="text" id="shortDescription" name="shortDescription" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="e.g., Resetting Password for System X">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Authentication Information <span class="text-red-500">*</span></label>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="authType" value="SSO" class="form-radio text-indigo-600 h-4 w-4" required>
+                                <span class="ml-2 text-gray-700">SSO</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="authType" value="Service Account" class="form-radio text-indigo-600 h-4 w-4">
+                                <span class="ml-2 text-gray-700">Service Account</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="authType" value="API Key" class="form-radio text-indigo-600 h-4 w-4">
+                                <span class="ml-2 text-gray-700">API Key</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="authType" value="OAuth" class="form-radio text-indigo-600 h-4 w-4">
+                                <span class="ml-2 text-gray-700">OAuth</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="furtherAuthInfoContainer" class="hidden">
+                        <label for="furtherAuthInfo" class="block text-sm font-medium text-gray-700">Further Authentication Information</label>
+                        <textarea id="furtherAuthInfo" name="furtherAuthInfo" rows="2"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Please provide Service Account ID, API Key, Client Secrets, or other relevant details."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="detailedDescription" class="block text-sm font-medium text-gray-700">Detailed Description on SOP <span class="text-red-500">*</span></label>
+                        <textarea id="detailedDescription" name="detailedDescription" rows="5" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Is backend DB access available?</label>
+                        <div class="flex items-center gap-6">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="dbAccess" value="Yes" class="form-radio text-indigo-600 h-4 w-4">
+                                <span class="ml-2 text-gray-700">Yes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="dbAccess" value="No" class="form-radio text-indigo-600 h-4 w-4" checked>
+                                <span class="ml-2 text-gray-700">No</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="dbDetailsContainer" class="hidden">
+                        <label for="dbDetails" class="block text-sm font-medium text-gray-700">Database Access Details</label>
+                        <textarea id="dbDetails" name="dbDetails" rows="2"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="e.g., Database type, Read/Write permissions, Connection string format."></textarea>
+                    </div>
+
+                    <div>
+                        <label for="attachment" class="block text-sm font-medium text-gray-700">Attach Supporting Documents (Optional)</label>
+                        <input type="file" id="attachment" name="attachment"
+                            class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                    </div>
+                    
+                    <div class="pt-6 border-t mt-8">
+                        <button type="submit" id="submitButton"
+                            class="w-full md:w-auto px-6 py-3 border border-transparent rounded-md shadow-lg text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50">
+                            Submit SOP Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="submission-details-view" class="view-content hidden space-y-8">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-3 mb-4">Submission Status & History</h2>
+                
+                <div id="totalEntriesWidget" class="cursor-pointer p-5 bg-indigo-50 border border-indigo-200 rounded-xl shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.01] flex items-center justify-between" role="button" aria-label="Refresh total entries count">
+                    <div>
+                        <p class="text-sm font-medium text-indigo-700">Total Requests Submitted (Fetched from sop_request table)</p>
+                        <p id="totalEntriesCount" class="text-3xl font-extrabold text-indigo-900 mt-1">0</p>
+                    </div>
+                    <svg id="refreshIcon" class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 0l-3 3-3-3m3 3v5h.582m0 0l-3-3-3 3m-3-3H9"></path></svg>
+                </div>
+
+                <div id="statusMessage" class="min-h-[100px] flex items-center justify-center text-gray-500 italic border rounded-md bg-white p-4">
+                    No submissions yet.
+                </div>
+
+                <h3 class="text-xl font-semibold text-gray-800 pt-4 border-t mt-8">Last Submitted Data (for Verification)</h3>
+                <div id="lastSubmissionTableContainer" class="mt-4 bg-white rounded-lg shadow-inner overflow-x-auto border border-gray-200">
+                    <p id="tablePlaceholder" class="p-4 text-gray-500 italic text-sm">Waiting for submission...</p>
+                </div>
+
+                <h3 class="text-xl font-semibold text-gray-800 pt-4 border-t mt-8">Full Submission History (All Entries)</h3>
+                <div class="overflow-x-auto bg-gray-50 rounded-lg shadow-md mt-4">
+                    <table class="min-w-full divide-y divide-gray-200 responsive-table">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted On</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed On</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th> 
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="12" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    Click 'Submission Status & History' to load data.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="history-loading" class="text-center p-8 text-gray-500 hidden">
+                        <svg class="animate-spin h-5 w-5 mr-3 inline text-indigo-500" viewBox="0 0 24 24"></svg>
+                        Loading history...
+                    </div>
+                    <div id="history-error" class="text-center p-8 text-red-500 hidden">Failed to load submission history.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="submissionModal" 
+          class="fixed bottom-4 right-4 p-4 text-white rounded-lg shadow-2xl transition-all duration-300 transform translate-y-0 opacity-0 pointer-events-none w-full max-w-sm z-50 flex items-center justify-between"
+          role="alert">
+        <div class="flex items-center">
+            <span id="modalIcon" class="mr-3"></span>
+            <div id="modalMessage"></div>
+        </div>
+        <button onclick="document.getElementById('submissionModal').classList.add('opacity-0', 'pointer-events-none')" class="ml-4 text-white opacity-70 hover:opacity-100 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+
+    <div id="status-modal" class="fixed inset-0 z-50 overflow-y-auto hidden modal-overlay transition-opacity duration-300 ease-in-out">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 transform transition-all duration-300 scale-95" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+                <h3 class="text-xl font-bold text-gray-900 mb-4" id="modal-title">Update Request Status</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">Request ID: <span id="modal-request-id" class="font-mono font-semibold text-gray-800"></span></p>
+                    <label for="new-status" class="block text-sm font-medium text-gray-700 mb-1">Select New Status</label>
+                    <select id="new-status" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="Submitted">Submitted</option>
+                        <option value="In_Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="On_Hold">On Hold</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="status-reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Status Change <span class="text-red-500">*</span></label>
+                    <textarea id="status-reason" rows="2" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" required placeholder="Describe why the status is changing (e.g., 'Moving to Dev', 'Rejected due to insufficient details')."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-status-update" type="button" class="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button id="save-status-update" type="button" class="py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                        Save Status
+                    </button>
+                </div>
+                <div id="modal-update-message" class="mt-4 text-sm text-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assignment-modal" class="fixed inset-0 z-50 overflow-y-auto hidden modal-overlay transition-opacity duration-300 ease-in-out">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 transform transition-all duration-300 scale-95" role="dialog" aria-modal="true" aria-labelledby="assignment-modal-title">
+                <h3 class="text-xl font-bold text-gray-900 mb-4" id="assignment-modal-title">Update Request Assignment</h3>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">Request ID: <span id="assignment-modal-request-id" class="font-mono font-semibold text-gray-800"></span></p>
+                    <p class="text-sm text-gray-600 mb-2">Current Assignee: <span id="assignment-modal-current-assignee" class="font-semibold text-gray-800"></span></p>
+                    
+                    <label for="new-assignee" class="block text-sm font-medium text-gray-700 mb-1">Select New Assignee</label>
+                    <select id="new-assignee" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-assignment-update" type="button" class="py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button id="save-assignment-update" type="button" class="py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-teal-600 hover:bg-teal-700">
+                        Save Assignment
+                    </button>
+                </div>
+                <div id="assignment-modal-update-message" class="mt-4 text-sm text-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Functions ---
+
+        /**
+         * Formats a given timestamp to IST (DD/MM/YYYY, HH:MM:SS AM/PM format)
+         */
+        function formatToIST(timestamp) {
+            if (!timestamp) return 'N/A';
+
+            try {
+                const date = new Date(timestamp);
+                
+                if (isNaN(date.getTime())) {
+                    return 'Invalid Date: ' + timestamp; 
+                }
+                
+                // Convert to IST by getting the time in Asia/Kolkata timezone
+                const options = {
+                    timeZone: 'Asia/Kolkata',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false // Use 24-hour format first
+                };
+                
+                const formatter = new Intl.DateTimeFormat('en-GB', options);
+                const parts = formatter.formatToParts(date);
+                
+                // Extract parts
+                const day = parts.find(p => p.type === 'day').value;
+                const month = parts.find(p => p.type === 'month').value;
+                const year = parts.find(p => p.type === 'year').value;
+                let hour = parseInt(parts.find(p => p.type === 'hour').value);
+                const minute = parts.find(p => p.type === 'minute').value;
+                const second = parts.find(p => p.type === 'second').value;
+                
+                // Convert to 12-hour format
+                const ampm = hour >= 12 ? 'pm' : 'am';
+                hour = hour % 12;
+                hour = hour ? hour : 12; // 0 should be 12
+                const hourStr = hour.toString().padStart(2, '0');
+                
+                return `${day}/${month}/${year}, ${hourStr}:${minute}:${second} ${ampm}`;
+                
+            } catch (e) {
+                console.error("Error formatting date to IST:", e, timestamp);
+                return 'Parse Error';
+            }
+        }
+
+        function showModalStatus(type, message) {
+            const submissionModal = document.getElementById('submissionModal');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalMessage = document.getElementById('modalMessage');
+
+            clearTimeout(window.modalTimeout);
+            
+            if (type === 'success') {
+                submissionModal.className = 'fixed bottom-4 right-4 p-4 text-white rounded-lg shadow-2xl transition-all duration-300 transform translate-y-0 opacity-0 pointer-events-none w-full max-w-sm z-50 flex items-center justify-between bg-green-600';
+                modalIcon.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            } else if (type === 'error') {
+                submissionModal.className = 'fixed bottom-4 right-4 p-4 text-white rounded-lg shadow-2xl transition-all duration-300 transform translate-y-0 opacity-0 pointer-events-none w-full max-w-sm z-50 flex items-center justify-between bg-red-600';
+                modalIcon.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            } else {
+                submissionModal.className = 'fixed bottom-4 right-4 p-4 text-white rounded-lg shadow-2xl transition-all duration-300 transform translate-y-0 opacity-0 pointer-events-none w-full max-w-sm z-50 flex items-center justify-between bg-gray-700';
+                modalIcon.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            }
+
+            modalMessage.innerHTML = message;
+            submissionModal.classList.remove('opacity-0', 'pointer-events-none');
+            
+            window.modalTimeout = setTimeout(() => {
+                submissionModal.classList.add('opacity-0', 'pointer-events-none');
+            }, 5000);
+        }
+
+        function switchView(activeViewId) {
+            const views = document.querySelectorAll('.view-content');
+            const tabs = document.querySelectorAll('.tab-button');
+            
+            views.forEach(view => view.classList.add('hidden'));
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            document.getElementById(activeViewId + '-view').classList.remove('hidden');
+            document.getElementById('tab-' + activeViewId.replace('-details', '')).classList.add('active');
+            
+            if (activeViewId === 'submission-details') {
+                if (typeof window.fetchAllSubmissions === 'function') {
+                    window.fetchAllSubmissions();
+                    window.updateTotalEntries();
+                }
+            }
+        }
+
+        // --- DOMContentLoaded Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const BASE_URL = 'http://127.0.0.1:5000';
+            
+            // Elements
+            const form = document.getElementById('sopForm');
+            const emailInput = document.getElementById('email');
+            const nameInput = document.getElementById('name');
+            const managerInput = document.getElementById('manager');
+            const suggestionsContainer = document.getElementById('email-suggestions');
+            const submitButton = document.getElementById('submitButton');
+            const furtherAuthInfoContainer = document.getElementById('furtherAuthInfoContainer');
+            const dbDetailsContainer = document.getElementById('dbDetailsContainer');
+
+            const totalEntriesWidget = document.getElementById('totalEntriesWidget');
+            const totalEntriesCountEl = document.getElementById('totalEntriesCount');
+            const totalEntriesTabCountEl = document.getElementById('total-entries-count');
+            const refreshIcon = document.getElementById('refreshIcon');
+            const historyTableBody = document.getElementById('history-table-body');
+            const historyLoading = document.getElementById('history-loading');
+            const historyError = document.getElementById('history-error');
+            const statusMessage = document.getElementById('statusMessage'); 
+            const lastSubmissionTableContainer = document.getElementById('lastSubmissionTableContainer');
+            const tablePlaceholder = document.getElementById('tablePlaceholder');
+
+            const statusModal = document.getElementById('status-modal');
+            const modalRequestIdSpan = document.getElementById('modal-request-id');
+            const newStatusSelect = document.getElementById('new-status');
+            const statusReasonTextarea = document.getElementById('status-reason');
+            const saveStatusButton = document.getElementById('save-status-update');
+            const cancelStatusButton = document.getElementById('cancel-status-update');
+            const modalUpdateMessage = document.getElementById('modal-update-message');
+            
+            const assignmentModal = document.getElementById('assignment-modal');
+            const assignmentModalRequestIdSpan = document.getElementById('assignment-modal-request-id');
+            const assignmentModalCurrentAssigneeSpan = document.getElementById('assignment-modal-current-assignee');
+            const newAssigneeSelect = document.getElementById('new-assignee');
+            const saveAssignmentButton = document.getElementById('save-assignment-update');
+            const cancelAssignmentButton = document.getElementById('cancel-assignment-update');
+            const assignmentModalUpdateMessage = document.getElementById('assignment-modal-update-message');
+
+            // State
+            let employeeLocked = false;
+            let submissionCount = 0; 
+            let currentRequestIdToUpdate = null;
+            let currentRequestIdToAssign = null;
+
+            const ASSIGNEE_LIST = [
+                { value: 'Unassigned', name: 'Unassigned' },
+                { value: 'Srihari Srinivasan', name: 'Srihari Srinivasan' },
+                { value: 'Vasanthan K', name: 'Vasanthan K' },
+                { value: 'Preamkumar Nandagopal', name: 'Preamkumar Nandagopal' },
+                { value: 'Saravanan R', name: 'Saravanan R' },
+                { value: 'Amith KU', name: 'Amith KU' },
+            ];
+
+            const STATUS_MAP = {
+                'Submitted': 'Submitted',
+                'In_Progress': 'In Progress',
+                'Completed': 'Completed',
+                'Rejected': 'Rejected',
+                'On_Hold': 'On Hold'
+            };
+
+            // Utility Functions
+            function populateAssigneeSelect() {
+                newAssigneeSelect.innerHTML = '';
+                ASSIGNEE_LIST.forEach(assignee => {
+                    const option = document.createElement('option');
+                    option.value = assignee.value;
+                    option.textContent = assignee.name;
+                    newAssigneeSelect.appendChild(option);
+                });
+            }
+            populateAssigneeSelect();
+
+            function formatStatusPill(status) {
+                const displayStatus = STATUS_MAP[status] || status.replace(/_/g, ' ');
+                const statusClass = status.replace(/\s/g, '_'); 
+                return `<span class="status-pill status-${statusClass}">${displayStatus}</span>`;
+            }
+
+            const setEmployeeDetails = (email, name, manager) => {
+                emailInput.value = email;
+                nameInput.value = name;
+                managerInput.value = manager;
+                nameInput.readOnly = true; 
+                managerInput.readOnly = true; 
+                nameInput.classList.add('bg-gray-200');
+                managerInput.classList.add('bg-gray-200');
+                employeeLocked = true;
+                suggestionsContainer.classList.add('hidden');
+            };
+
+            const clearEmployeeDetails = () => {
+                nameInput.value = '';
+                managerInput.value = '';
+                nameInput.readOnly = false; 
+                managerInput.readOnly = false; 
+                nameInput.classList.remove('bg-gray-200');
+                managerInput.classList.remove('bg-gray-200');
+                employeeLocked = false;
+            };
+
+            // Total Entries Logic
+            window.updateTotalEntries = async () => {
+                refreshIcon.classList.add('animate-spin-slow');
+                totalEntriesCountEl.textContent = '...';
+                totalEntriesWidget.classList.add('pointer-events-none');
+                
+                try {
+                    const response = await fetch(`${BASE_URL}/get_sop_count`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    submissionCount = data.count;
+                } catch (error) {
+                    console.error("Failed to fetch submission count:", error);
+                } finally {
+                    refreshIcon.classList.remove('animate-spin-slow');
+                    totalEntriesWidget.classList.remove('pointer-events-none');
+                    totalEntriesCountEl.textContent = submissionCount;
+                    totalEntriesTabCountEl.textContent = submissionCount;
+                }
+            };
+
+            totalEntriesWidget.addEventListener('click', window.updateTotalEntries);
+
+            // Status Modal Logic
+            function openStatusModal(event) {
+                const button = event.target.closest('.edit-status-btn');
+                if (!button) return;
+
+                currentRequestIdToUpdate = button.getAttribute('data-request-id');
+                const currentStatus = button.getAttribute('data-current-status');
+                const currentReason = button.getAttribute('data-current-reason') || '';
+                
+                modalRequestIdSpan.textContent = currentRequestIdToUpdate;
+                const normalizedStatus = currentStatus.replace(/\s/g, '_');
+                newStatusSelect.value = normalizedStatus in STATUS_MAP ? normalizedStatus : 'Submitted';
+                statusReasonTextarea.value = currentReason;
+                
+                modalUpdateMessage.innerHTML = '';
+                statusModal.classList.remove('hidden');
+                setTimeout(() => statusModal.querySelector('.transform').classList.remove('scale-95'), 10);
+            }
+
+            function closeStatusModal() {
+                statusModal.querySelector('.transform').classList.add('scale-95');
+                setTimeout(() => statusModal.classList.add('hidden'), 300); 
+                currentRequestIdToUpdate = null;
+            }
+
+            async function handleStatusUpdate() {
+                if (!currentRequestIdToUpdate) return;
+
+                const newStatus = newStatusSelect.value;
+                const reason = statusReasonTextarea.value.trim();
+
+                if (!reason) {
+                    modalUpdateMessage.innerHTML = `<p class="text-red-600 font-medium">Reason is required for status change.</p>`;
+                    return;
+                }
+
+                saveStatusButton.disabled = true;
+                saveStatusButton.textContent = 'Saving...';
+                modalUpdateMessage.innerHTML = `<p class="text-indigo-500">Updating status...</p>`;
+
+                try {
+                    const response = await fetch(`${BASE_URL}/update_status`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            request_id: currentRequestIdToUpdate.replace('#', ''),
+                            new_status: newStatus,
+                            reason: reason
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        modalUpdateMessage.innerHTML = `<p class="text-green-600 font-medium">${result.message}</p>`;
+                        await window.fetchAllSubmissions();
+                        saveStatusButton.disabled = false;
+                        saveStatusButton.textContent = 'Save Status';
+                        closeStatusModal();
+                    } else {
+                        throw new Error(result.error || 'Unknown update error');
+                    }
+                } catch (error) {
+                    modalUpdateMessage.innerHTML = `<p class="text-red-600 font-medium">Update failed: ${error.message}</p>`;
+                    console.error('Status Update Failed:', error);
+                } finally {
+                    saveStatusButton.disabled = false;
+                    saveStatusButton.textContent = 'Save Status';
+                }
+            }
+
+            // Assignment Modal Logic
+            function openAssignmentModal(event) {
+                const button = event.target.closest('.assign-btn');
+                if (!button) return;
+
+                currentRequestIdToAssign = button.getAttribute('data-request-id');
+                const currentAssignee = button.getAttribute('data-current-assignee');
+                
+                assignmentModalRequestIdSpan.textContent = currentRequestIdToAssign;
+                assignmentModalCurrentAssigneeSpan.textContent = currentAssignee;
+                
+                const currentAssigneeValue = currentAssignee.replace(/\s/g, '_');
+                newAssigneeSelect.value = ASSIGNEE_LIST.some(a => a.value === currentAssigneeValue) ? currentAssigneeValue : 'Unassigned';
+
+                assignmentModalUpdateMessage.innerHTML = '';
+                assignmentModal.classList.remove('hidden');
+                setTimeout(() => assignmentModal.querySelector('.transform').classList.remove('scale-95'), 10);
+            }
+
+            function closeAssignmentModal() {
+                assignmentModal.querySelector('.transform').classList.add('scale-95');
+                setTimeout(() => assignmentModal.classList.add('hidden'), 300); 
+                currentRequestIdToAssign = null;
+            }
+
+            async function handleAssignmentUpdate() {
+                if (!currentRequestIdToAssign) return;
+                
+                const newAssigneeValue = newAssigneeSelect.value;
+                
+                saveAssignmentButton.disabled = true;
+                saveAssignmentButton.textContent = 'Saving...';
+                assignmentModalUpdateMessage.innerHTML = `<p class="text-teal-500">Updating assignment...</p>`;
+
+                try {
+                    const response = await fetch(`${BASE_URL}/update_assignment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            request_id: currentRequestIdToAssign.replace('#', ''),
+                            assigned_to: newAssigneeValue
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        assignmentModalUpdateMessage.innerHTML = `<p class="text-green-600 font-medium">${result.message}</p>`;
+                        await window.fetchAllSubmissions();
+                        saveAssignmentButton.disabled = false;
+                        saveAssignmentButton.textContent = 'Save Assignment';
+                        closeAssignmentModal();
+                    } else {
+                        throw new Error(result.error || 'Unknown update error');
+                    }
+                } catch (error) {
+                    assignmentModalUpdateMessage.innerHTML = `<p class="text-red-600 font-medium">Update failed: ${error.message}</p>`;
+                    console.error('Assignment Update Failed:', error);
+                } finally {
+                    saveAssignmentButton.disabled = false;
+                    saveAssignmentButton.textContent = 'Save Assignment';
+                }
+            }
+
+            // History Table Functions
+            function displaySubmissionInTable(submission) {
+                const submissionId = submission.id || Math.floor(Math.random() * 10000); 
+                const shortDesc = submission.short_description || submission.shortDescription || 'N/A';
+                const currentStatus = submission.status || 'Submitted';
+                const currentReason = submission.reason || 'Initial submission.';
+                const email = submission.email || 'N/A';
+                const name = submission.name || 'N/A';
+                const manager = submission.manager || 'N/A';
+                const assignedTo = submission.assigned_to || 'Unassigned'; 
+                
+                const createdAt = formatToIST(submission.created_at);
+                const lastUpdated = formatToIST(submission.last_updated); 
+                const completedOn = currentStatus === 'Completed' ? formatToIST(submission.completed_on) : 'N/A';
+
+                const newRow = historyTableBody.insertRow(); 
+                newRow.className = "hover:bg-gray-50 transition duration-150";
+                newRow.setAttribute('data-request-id', `#${submissionId}`);
+
+                const actionsCellContent = `
+                    <div class="flex space-x-2 justify-center">
+                        <button data-request-id="#${submissionId}" data-current-status="${currentStatus}" data-current-reason="${currentReason}"
+                                class="edit-status-btn py-1 px-3 bg-indigo-500 text-white text-xs rounded-full hover:bg-indigo-600 transition">
+                                Status
+                        </button>
+                        <button data-request-id="#${submissionId}" data-current-assignee="${assignedTo}"
+                                class="assign-btn py-1 px-3 bg-teal-500 text-white text-xs rounded-full hover:bg-teal-600 transition">
+                                Assign
+                        </button>
+                    </div>
+                `;
+
+                const cellsData = [
+                    { label: 'ID', content: `#${submissionId}` },
+                    { label: 'Submitted On', content: createdAt },
+                    { label: 'Last Updated', content: lastUpdated },
+                    { label: 'Completed On', content: completedOn },
+                    { label: 'Email', content: email },
+                    { label: 'Name', content: name },
+                    { label: 'Manager', content: manager },
+                    { label: 'Assigned To', content: assignedTo }, 
+                    { label: 'Description', content: shortDesc },
+                    { label: 'Status', content: formatStatusPill(currentStatus), class: 'text-center' },
+                    { label: 'Reason', content: currentReason, class: 'whitespace-normal' },
+                    { label: 'Actions', content: actionsCellContent, class: 'text-center' }
+                ];
+
+                cellsData.forEach((data, index) => {
+                    const cell = newRow.insertCell(index);
+                    cell.className = `px-6 py-4 whitespace-nowrap text-sm text-gray-800 ${data.class || ''}`;
+                    cell.setAttribute('data-label', data.label);
+                    cell.innerHTML = data.content;
+                });
+
+                newRow.querySelector('.edit-status-btn').addEventListener('click', openStatusModal);
+                newRow.querySelector('.assign-btn').addEventListener('click', openAssignmentModal);
+            }
+            
+            const displayLastSubmissionTable = (data) => {
+                tablePlaceholder.classList.add('hidden');
+                
+                const submissionTime = formatToIST(data.created_at || data.timestamp);
+                const currentStatus = data.status || 'Submitted';
+                statusMessage.innerHTML = `
+                    <div class="p-4 bg-gray-100 border-l-4 border-gray-300 text-gray-700 w-full rounded-md">
+                        <p class="font-bold">Last Request Status: ${formatStatusPill(currentStatus)}</p>
+                        <p class="text-sm mt-1">Request ID: ${data.id || 'N/A'} submitted by ${data.name} on ${submissionTime}</p>
+                    </div>
+                `;
+
+                let tableHtml = `
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <tbody class="divide-y divide-gray-200">
+                `;
+
+                const keysToDisplay = [
+                    { key: 'id', label: 'Request ID' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'name', label: 'Name' },
+                    { key: 'manager', label: 'Manager' },
+                    { key: 'assigned_to', label: 'Assigned To' },
+                    { key: 'shortDescription', label: 'Short SOP Description' },
+                    { key: 'authType', label: 'Authentication Type' },
+                    { key: 'dbAccess', label: 'Backend DB Access' },
+                    { key: 'detailedDescription', label: 'Detailed Description' },
+                ];
+
+                keysToDisplay.forEach(item => {
+                    let value = data[item.key] || data[item.key.toLowerCase()] || 'N/A';
+                    
+                    if (item.key === 'authType' && data.furtherAuthInfo) {
+                        value += ` (Details: ${data.furtherAuthInfo})`;
+                    } else if (item.key === 'dbAccess' && data.dbDetails) {
+                        value += ` (Details: ${data.dbDetails})`;
+                    }
+
+                    if (typeof value === 'string' && value.trim() === '') {
+                        value = 'N/A (Not Provided)';
+                    }
+                    
+                    tableHtml += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900 w-1/4 bg-gray-100 border-r border-gray-200">${item.label}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700 w-3/4 whitespace-normal break-words">${value}</td>
+                        </tr>
+                    `;
+                });
+
+                tableHtml += `
+                        </tbody>
+                    </table>
+                `;
+                lastSubmissionTableContainer.innerHTML = tableHtml;
+            };
+
+            window.fetchAllSubmissions = async () => {
+                historyTableBody.innerHTML = '';
+                historyLoading.classList.remove('hidden');
+                historyError.classList.add('hidden');
+
+                try {
+                    const response = await fetch(`${BASE_URL}/get_all_submissions`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    
+                    data.submissions.sort((a, b) => {
+                        const idA = a.id ? parseInt(a.id.toString().replace('#', '')) : 0;
+                        const idB = b.id ? parseInt(b.id.toString().replace('#', '')) : 0;
+                        return idB - idA;
+                    });
+
+                    historyLoading.classList.add('hidden');
+                    historyTableBody.innerHTML = ''; 
+
+                    data.submissions.forEach(submission => displaySubmissionInTable(submission));
+                    
+                    if (data.submissions.length === 0) {
+                        historyTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="12" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    No submission history found.
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    
+                    if (data.submissions.length > 0) {
+                        displayLastSubmissionTable(data.submissions[0]);
+                    }
+
+                } catch (error) {
+                    console.error("Failed to fetch submission history:", error);
+                    historyLoading.classList.add('hidden');
+                    historyError.classList.remove('hidden');
+                    historyTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="12" class="px-6 py-4 whitespace-nowrap text-sm text-red-500 text-center">
+                                Error fetching history. Backend URL or server is unreachable.
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+
+            // Event Listeners
+            document.querySelectorAll('input[name="authType"]').forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    const value = event.target.value;
+                    const furtherAuthInfoInput = document.getElementById('furtherAuthInfo');
+                    
+                    if (value !== 'SSO') {
+                        furtherAuthInfoContainer.classList.remove('hidden');
+                        furtherAuthInfoInput.setAttribute('required', 'true');
+                    } else {
+                        furtherAuthInfoContainer.classList.add('hidden');
+                        furtherAuthInfoInput.removeAttribute('required');
+                        furtherAuthInfoInput.value = '';
+                    }
+                });
+            });
+
+            document.querySelectorAll('input[name="dbAccess"]').forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    const value = event.target.value;
+                    const dbDetailsInput = document.getElementById('dbDetails');
+
+                    if (value === 'Yes') {
+                        dbDetailsContainer.classList.remove('hidden');
+                        dbDetailsInput.setAttribute('required', 'true');
+                    } else {
+                        dbDetailsContainer.classList.add('hidden');
+                        dbDetailsInput.removeAttribute('required');
+                        dbDetailsInput.value = '';
+                    }
+                });
+            });
+
+            cancelStatusButton.addEventListener('click', closeStatusModal);
+            saveStatusButton.addEventListener('click', handleStatusUpdate);
+            statusModal.addEventListener('click', (event) => {
+                if (event.target === statusModal) {
+                    closeStatusModal();
+                }
+            });
+            
+            cancelAssignmentButton.addEventListener('click', closeAssignmentModal);
+            saveAssignmentButton.addEventListener('click', handleAssignmentUpdate);
+            assignmentModal.addEventListener('click', (event) => {
+                if (event.target === assignmentModal) {
+                    closeAssignmentModal();
+                }
+            });
+
+            // Autocomplete Logic
+            let autocompleteTimeout = null;
+            emailInput.addEventListener('input', () => {
+                const query = emailInput.value.trim();
+
+                if (employeeLocked) {
+                    clearEmployeeDetails();
+                }
+
+                if (query.length < 2) {
+                    suggestionsContainer.innerHTML = '';
+                    suggestionsContainer.classList.add('hidden');
+                    return;
+                }
+
+                clearTimeout(autocompleteTimeout);
+                autocompleteTimeout = setTimeout(() => {
+                    fetchSuggestions(query);
+                }, 300);
+            });
+
+            const fetchSuggestions = async (query) => {
+                const MOCK_EMPLOYEES = [
+                    { email: "alice.b@corp.com", name: "Alice Brown", manager: "Bob Johnson" },
+                    { email: "aaron.s@corp.com", name: "Aaron Smith", manager: "Bob Johnson" },
+                    { email: "andy.l@corp.com", name: "Andy Lau", manager: "Charlie Green" },
+                    { email: "bella.c@corp.com", name: "Bella Cruz", manager: "David King" },
+                ];
+
+                try {
+                    const response = await fetch(`${BASE_URL}/lookup_employee`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email_prefix: query.toLowerCase() }),
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.json().catch(() => ({ error: 'Unknown server error' }));
+                        throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const suggestions = await response.json();
+                    renderSuggestions(suggestions);
+
+                } catch (error) {
+                    console.error('Error fetching employee data (falling back to mock data):', error);
+                    const filtered = MOCK_EMPLOYEES.filter(emp => emp.email.toLowerCase().startsWith(query.toLowerCase()));
+                    renderSuggestions(filtered);
+                }
+            };
+
+            const renderSuggestions = (suggestions) => {
+                suggestionsContainer.innerHTML = '';
+                if (suggestions.length === 0) {
+                    suggestionsContainer.classList.add('hidden');
+                    return;
+                }
+
+                suggestions.forEach(employee => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item p-3 border-t border-gray-100 transition duration-100 ease-in-out';
+                    item.textContent = `${employee.email} (${employee.name} / ${employee.manager})`;
+
+                    item.addEventListener('click', () => {
+                        setEmployeeDetails(employee.email, employee.name, employee.manager);
+                    });
+                    suggestionsContainer.appendChild(item);
+                });
+                suggestionsContainer.classList.remove('hidden');
+            };
+
+            document.addEventListener('click', (event) => {
+                if (!emailInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+            
+            // Form Submission Logic
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
+                
+                const formData = new FormData(form);
+                const submissionData = {};
+                for (const [key, value] of formData.entries()) {
+                    if (key !== 'attachment') {
+                        submissionData[key] = value;
+                    }
+                }
+
+                if (!submissionData.name || !submissionData.manager) {
+                     showModalStatus('error', `<p class="font-bold">Missing Employee Data!</p><p class="text-xs">Please use autocomplete for email.</p>`);
+                     submitButton.disabled = false;
+                     submitButton.textContent = 'Submit SOP Request';
+                     return;
+                }
+
+                submissionData['status'] = 'Submitted';
+                submissionData['assigned_to'] = 'Unassigned';
+
+                const fileInput = document.getElementById('attachment');
+                const file = fileInput.files[0];
+                submissionData['attachment_info'] = file ? {
+                    filename: file.name,
+                    mimeType: file.type,
+                    size: file.size,
+                } : null;
+
+                try {
+                    const response = await fetch(`${BASE_URL}/submit_sop`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(submissionData),
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showModalStatus('success', `<p class="font-bold text-lg">Submission Successful!</p><p class="text-sm mt-1">Request ID: ${result.request_id}</p>`);
+                        
+                        submissionData.id = result.request_id;
+                        submissionData.created_at = result.created_at;
+                        
+                        displayLastSubmissionTable(submissionData);
+                        window.fetchAllSubmissions(); 
+                        window.updateTotalEntries();
+                        
+                        form.reset();
+                        clearEmployeeDetails();
+                        furtherAuthInfoContainer.classList.add('hidden');
+                        dbDetailsContainer.classList.add('hidden');
+
+                    } else {
+                        throw new Error(result.error || 'Server reported an error during submission.');
+                    }
+                } catch (error) {
+                    console.error('Submission Error:', error);
+                    
+                    if (error.message.includes("Failed to fetch") || error.message.includes("Network response was not ok")) {
+                         const mockId = Math.floor(Math.random() * 900000) + 100000;
+                         const mockData = { ...submissionData, id: `#${mockId}`, created_at: new Date().toISOString() };
+                         
+                         showModalStatus('success', `<p class="font-bold text-lg">Submission Status: OK (Simulated)</p><p class="text-sm mt-1">Request ID: #${mockId}. Backend unreachable.</p>`);
+                        
+                        displayLastSubmissionTable(mockData);
+                        submissionCount++;
+                        window.fetchAllSubmissions(); 
+                        window.updateTotalEntries();
+
+                        form.reset();
+                        clearEmployeeDetails();
+                        furtherAuthInfoContainer.classList.add('hidden');
+                        dbDetailsContainer.classList.add('hidden');
+
+                    } else {
+                        showModalStatus('error', `<p class="font-bold text-lg">Submission Failed!</p><p class="text-sm mt-1">Error: ${error.message}.</p>`);
+                    }
+                    
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Submit SOP Request';
+                }
+            });
+
+            window.updateTotalEntries();
+        });
+    </script>
+</body>
+</html>
